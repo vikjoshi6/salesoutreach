@@ -8,7 +8,7 @@ import { ensureDir, nowIso, slugify } from "./utils.js";
 
 export async function prepareOutreach(snapshot: CrmSnapshot, config: AppConfig): Promise<{ prepared: number; blocked: number }> {
   const qualified = snapshot.leads
-    .filter((lead) => lead.state === "qualified")
+    .filter((lead) => lead.state === "qualified" || lead.state === "draft_ready")
     .slice(0, config.DAILY_DRAFT_LIMIT);
   let prepared = 0;
   let blocked = 0;
