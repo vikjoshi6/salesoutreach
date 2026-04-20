@@ -43,5 +43,6 @@ Home-service contractors in Mississauga compete on response speed, trust, and co
 - Personalized mini-audit created before the call.
 - Lead-specific mockup page linked in the email.
 - Local Mississauga/GTA focus.
+- Recent local project experience includes commercialusedfoodequipment.com, coldstoragedesignsolutions.ca, and coldstreamrefrigeration.ca.
 - Practical AI workflows for intake and follow-up, not vague automation.
 - Draft-only, approval-first outreach process that keeps the business owner in control.
