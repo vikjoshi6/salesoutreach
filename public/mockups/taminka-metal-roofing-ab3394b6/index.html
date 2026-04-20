@@ -63,6 +63,7 @@
     .eyebrow { width: fit-content; border: 1px solid rgba(215,180,106,0.62); border-radius: 8px; padding: 9px 11px; font-size: 13px; font-weight: 800; text-transform: uppercase; color: #f4db9d; background: rgba(0,0,0,0.18); }
     h1 { max-width: 820px; font-size: clamp(46px, 6vw, 88px); line-height: 0.95; margin: 18px 0; letter-spacing: 0; }
     .lead { max-width: 680px; font-size: 19px; line-height: 1.6; color: rgba(255,255,255,0.88); }
+    .hero-copy { max-width: 700px; color: rgba(255,255,255,0.82); font-size: 16px; line-height: 1.7; margin-top: 16px; }
     .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
     .primary, .secondary { border-radius: 8px; padding: 15px 18px; text-decoration: none; font-weight: 850; }
     .primary { background: #d7b46a; color: #111513; box-shadow: 0 12px 30px rgba(0,0,0,0.2); }
@@ -80,19 +81,35 @@
     .stat { border: 1px solid rgba(255,255,255,0.16); border-radius: 8px; padding: 22px; }
     .stat strong { display: block; font-size: 36px; margin-bottom: 6px; color: #d7b46a; }
     .section-title { max-width: 760px; margin: 0 0 24px; font-size: clamp(30px, 4vw, 48px); line-height: 1.04; }
+    .section-kicker { color: #8a6b2d; font-weight: 800; text-transform: uppercase; font-size: 13px; margin-bottom: 12px; }
+    .section-intro { max-width: 760px; color: #4e5853; line-height: 1.7; font-size: 18px; margin: -8px 0 28px; }
     .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
     .card { background: #fff; border: 1px solid #deddd5; border-radius: 8px; padding: 22px; min-height: 190px; box-shadow: 0 16px 38px rgba(23,29,25,0.06); }
     .card b { display: block; margin-bottom: 10px; font-size: 18px; }
+    .card p { margin: 0; color: #4d5752; line-height: 1.6; }
+    .card ul { margin: 14px 0 0; padding-left: 18px; color: #4d5752; line-height: 1.65; }
     .band { background: #ffffff; }
     .split { display: grid; grid-template-columns: 0.85fr 1.15fr; gap: 34px; align-items: start; }
     .proof-list { display: grid; gap: 12px; }
     .proof { border-left: 4px solid #d7b46a; background: #fbfaf5; padding: 17px; border-radius: 0 8px 8px 0; box-shadow: 0 12px 32px rgba(23,29,25,0.05); }
+    .process { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .step { background: #111513; color: #fff; border-radius: 8px; padding: 22px; min-height: 190px; }
+    .step span { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 8px; background: #d7b46a; color: #111513; font-weight: 800; margin-bottom: 18px; }
+    .step b { display: block; margin-bottom: 10px; font-size: 18px; }
+    .step p { margin: 0; color: rgba(255,255,255,0.78); line-height: 1.6; }
     .visual-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; padding-top: 0; }
     .visual { min-height: 220px; border-radius: 8px; background: center/cover; position: relative; overflow: hidden; }
     .visual:after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent, rgba(0,0,0,0.36)); }
+    .visual span { position: absolute; z-index: 1; left: 16px; right: 16px; bottom: 14px; color: #fff; font-weight: 800; text-shadow: 0 2px 18px rgba(0,0,0,0.45); }
     .visual.one { background-image: url("https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=900&q=80"); }
     .visual.two { background-image: url("https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=900&q=80"); }
     .visual.three { background-image: url("https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=80"); }
+    .testimonial { background: #fff; border-radius: 8px; padding: 26px; border: 1px solid #deddd5; box-shadow: 0 16px 38px rgba(23,29,25,0.06); }
+    .testimonial p { font-size: 20px; line-height: 1.6; margin: 0 0 14px; }
+    .faq { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    .faq-item { background: #fff; border: 1px solid #deddd5; border-radius: 8px; padding: 20px; }
+    .faq-item b { display: block; margin-bottom: 8px; }
+    .faq-item p { margin: 0; color: #4d5752; line-height: 1.6; }
     .final { background: #1c2723; color: #fff; }
     footer { padding: 24px max(22px, calc((100vw - 1200px) / 2)); color: #5b625f; }
     @media (max-width: 780px) {
@@ -100,7 +117,7 @@
       .hero, .split { grid-template-columns: 1fr; }
       .hero { min-height: auto; padding-top: 110px; }
       .quote-panel { max-width: 520px; }
-      .stats, .cards, .visual-strip { grid-template-columns: 1fr; }
+      .stats, .cards, .visual-strip, .process, .faq { grid-template-columns: 1fr; }
       .brand { max-width: 220px; }
     }
   </style>
@@ -123,6 +140,7 @@
         <div class="eyebrow">Premium roofing and exterior protection</div>
         <h1>Metal roofing built to protect what matters.</h1>
         <p class="lead">A high-trust homepage concept with premium visuals, project confidence, and a quote flow that feels worthy of a major home investment. Built for Mississauga, Canada customers who want confidence before they book.</p>
+        <p class="hero-copy">Homeowners deciding on a roof replacement want clarity, credibility, and a fast way to ask the right questions. This landing page makes the next step obvious while giving the company a more premium first impression.</p>
         <div class="actions">
           <a class="primary" href="#contact">Request a roofing quote</a>
           <a class="secondary" href="#services">View services</a>
@@ -150,17 +168,30 @@
       <div class="stat"><strong>Easy</strong>Call, text, or quote request</div>
     </section>
     <section id="services" class="band">
+      <div class="section-kicker">Services</div>
       <h2 class="section-title">A cleaner path from search to booked work.</h2>
+      <p class="section-intro">The page frames roofing services around the moments customers actually care about: protection, urgency, financing confidence, and a simple path to a quote.</p>
       <div class="cards">
-        <div class="card"><b>Metal roof systems</b>Durable roof options presented with clear benefits, timelines, and homeowner confidence cues.</div>
-        <div class="card"><b>Repair and replacement</b>A direct path for urgent needs, aging roofs, leaks, and inspection requests.</div>
-        <div class="card"><b>Financing-ready estimates</b>A polished quote journey that makes it easier to start the conversation.</div>
+        <div class="card"><b>Metal roof systems</b><p>Durable roof options presented with clear benefits, timelines, and homeowner confidence cues.</p><ul><li>Material and warranty highlights</li><li>Before-and-after project space</li><li>Quote request without friction</li></ul></div>
+        <div class="card"><b>Repair and replacement</b><p>A direct path for urgent needs, aging roofs, leaks, and inspection requests.</p><ul><li>Leak and storm prompts</li><li>Inspection CTA</li><li>Service-area copy</li></ul></div>
+        <div class="card"><b>Financing-ready estimates</b><p>A polished quote journey that makes it easier to start the conversation.</p><ul><li>Budget range language</li><li>Financing cue</li><li>Fast callback expectation</li></ul></div>
       </div>
     </section>
     <section class="visual-strip" aria-label="Project gallery preview">
-      <div class="visual one"></div>
-      <div class="visual two"></div>
-      <div class="visual three"></div>
+      <div class="visual one"><span>Premium exterior finish</span></div>
+      <div class="visual two"><span>Clean curb appeal</span></div>
+      <div class="visual three"><span>High-value home protection</span></div>
+    </section>
+    <section class="band">
+      <div class="section-kicker">How it works</div>
+      <h2 class="section-title">A quote flow that feels organized from the first click.</h2>
+      <p class="section-intro">A strong landing page should reduce uncertainty before the call. This structure gives visitors a clear process and helps the business receive better-qualified requests.</p>
+      <div class="process">
+        <div class="step"><span>1</span><b>Send details</b><p>The customer submits photos, address, timeline, and the main roofing concern.</p></div>
+        <div class="step"><span>2</span><b>Fast review</b><p>The company confirms fit, urgency, and whether an inspection is needed.</p></div>
+        <div class="step"><span>3</span><b>Clear options</b><p>The quote path explains repair, replacement, materials, and next steps.</p></div>
+        <div class="step"><span>4</span><b>Booked work</b><p>The page keeps the homeowner moving toward a call, estimate, or project date.</p></div>
+      </div>
     </section>
     <section id="proof">
       <div class="split">
@@ -172,9 +203,36 @@
         </div>
       </div>
     </section>
+    <section class="band">
+      <div class="split">
+        <div>
+          <div class="section-kicker">Trust</div>
+          <h2 class="section-title">A premium roof deserves premium proof.</h2>
+          <p class="section-intro">The concept reserves space for project photos, warranty messaging, materials, and local service coverage so the page feels credible instead of generic.</p>
+        </div>
+        <div class="testimonial">
+          <p>The goal is to make the company feel established before a homeowner ever picks up the phone: premium visuals, direct quote language, and confidence-building proof above the fold.</p>
+          <b>Landing page strategy note</b>
+        </div>
+      </div>
+    </section>
+    <section>
+      <div class="section-kicker">Questions</div>
+      <h2 class="section-title">Answers before the first call.</h2>
+      <div class="faq">
+        <div class="faq-item"><b>Do I need a repair or replacement?</b><p>The page routes both needs into the quote flow and asks enough detail to guide the first conversation.</p></div>
+        <div class="faq-item"><b>Can I ask about metal roofing?</b><p>Yes. The copy highlights premium metal systems and gives visitors a reason to ask about material options.</p></div>
+        <div class="faq-item"><b>How fast will someone respond?</b><p>The page sets a clear response expectation and keeps phone/text visible throughout the experience.</p></div>
+        <div class="faq-item"><b>Is this a full site?</b><p>This is a focused landing page concept that can become part of a full website build.</p></div>
+      </div>
+    </section>
     <section class="final">
       <h2 class="section-title">Ready for customers who are comparing options today.</h2>
-      <p class="lead">This concept uses a stronger visual first impression, faster quote flow, and clearer trust cues without making the site feel overbuilt.</p>
+      <p class="lead">This landing page concept uses stronger copy, premium visuals, faster quote flow, and clearer trust cues without making the site feel overbuilt.</p>
+      <div class="actions">
+        <a class="primary" href="#contact">Request a roofing quote</a>
+        <a class="secondary" href="tel:6472008720">Call (647) 200-8720</a>
+      </div>
     </section>
     <footer>Concept preview prepared by Vik&#039;s AI Consulting. Not affiliated with Taminka Metal Roofing.</footer>
   </main>

@@ -63,6 +63,7 @@
     .eyebrow { width: fit-content; border: 1px solid rgba(215,180,106,0.62); border-radius: 8px; padding: 9px 11px; font-size: 13px; font-weight: 800; text-transform: uppercase; color: #f4db9d; background: rgba(0,0,0,0.18); }
     h1 { max-width: 820px; font-size: clamp(46px, 6vw, 88px); line-height: 0.95; margin: 18px 0; letter-spacing: 0; }
     .lead { max-width: 680px; font-size: 19px; line-height: 1.6; color: rgba(255,255,255,0.88); }
+    .hero-copy { max-width: 700px; color: rgba(255,255,255,0.82); font-size: 16px; line-height: 1.7; margin-top: 16px; }
     .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
     .primary, .secondary { border-radius: 8px; padding: 15px 18px; text-decoration: none; font-weight: 850; }
     .primary { background: #d7b46a; color: #111513; box-shadow: 0 12px 30px rgba(0,0,0,0.2); }
@@ -80,19 +81,35 @@
     .stat { border: 1px solid rgba(255,255,255,0.16); border-radius: 8px; padding: 22px; }
     .stat strong { display: block; font-size: 36px; margin-bottom: 6px; color: #d7b46a; }
     .section-title { max-width: 760px; margin: 0 0 24px; font-size: clamp(30px, 4vw, 48px); line-height: 1.04; }
+    .section-kicker { color: #8a6b2d; font-weight: 800; text-transform: uppercase; font-size: 13px; margin-bottom: 12px; }
+    .section-intro { max-width: 760px; color: #4e5853; line-height: 1.7; font-size: 18px; margin: -8px 0 28px; }
     .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
     .card { background: #fff; border: 1px solid #deddd5; border-radius: 8px; padding: 22px; min-height: 190px; box-shadow: 0 16px 38px rgba(23,29,25,0.06); }
     .card b { display: block; margin-bottom: 10px; font-size: 18px; }
+    .card p { margin: 0; color: #4d5752; line-height: 1.6; }
+    .card ul { margin: 14px 0 0; padding-left: 18px; color: #4d5752; line-height: 1.65; }
     .band { background: #ffffff; }
     .split { display: grid; grid-template-columns: 0.85fr 1.15fr; gap: 34px; align-items: start; }
     .proof-list { display: grid; gap: 12px; }
     .proof { border-left: 4px solid #d7b46a; background: #fbfaf5; padding: 17px; border-radius: 0 8px 8px 0; box-shadow: 0 12px 32px rgba(23,29,25,0.05); }
+    .process { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .step { background: #111513; color: #fff; border-radius: 8px; padding: 22px; min-height: 190px; }
+    .step span { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 8px; background: #d7b46a; color: #111513; font-weight: 800; margin-bottom: 18px; }
+    .step b { display: block; margin-bottom: 10px; font-size: 18px; }
+    .step p { margin: 0; color: rgba(255,255,255,0.78); line-height: 1.6; }
     .visual-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; padding-top: 0; }
     .visual { min-height: 220px; border-radius: 8px; background: center/cover; position: relative; overflow: hidden; }
     .visual:after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent, rgba(0,0,0,0.36)); }
+    .visual span { position: absolute; z-index: 1; left: 16px; right: 16px; bottom: 14px; color: #fff; font-weight: 800; text-shadow: 0 2px 18px rgba(0,0,0,0.45); }
     .visual.one { background-image: url("https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=900&q=80"); }
     .visual.two { background-image: url("https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=900&q=80"); }
     .visual.three { background-image: url("https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=900&q=80"); }
+    .testimonial { background: #fff; border-radius: 8px; padding: 26px; border: 1px solid #deddd5; box-shadow: 0 16px 38px rgba(23,29,25,0.06); }
+    .testimonial p { font-size: 20px; line-height: 1.6; margin: 0 0 14px; }
+    .faq { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    .faq-item { background: #fff; border: 1px solid #deddd5; border-radius: 8px; padding: 20px; }
+    .faq-item b { display: block; margin-bottom: 8px; }
+    .faq-item p { margin: 0; color: #4d5752; line-height: 1.6; }
     .final { background: #1c2723; color: #fff; }
     footer { padding: 24px max(22px, calc((100vw - 1200px) / 2)); color: #5b625f; }
     @media (max-width: 780px) {
@@ -100,7 +117,7 @@
       .hero, .split { grid-template-columns: 1fr; }
       .hero { min-height: auto; padding-top: 110px; }
       .quote-panel { max-width: 520px; }
-      .stats, .cards, .visual-strip { grid-template-columns: 1fr; }
+      .stats, .cards, .visual-strip, .process, .faq { grid-template-columns: 1fr; }
       .brand { max-width: 220px; }
     }
   </style>
@@ -123,6 +140,7 @@
         <div class="eyebrow">Reliable comfort and mechanical service</div>
         <h1>Fast comfort service without the back and forth.</h1>
         <p class="lead">A modern service-site concept built around emergency trust, booking clarity, and after-hours intake. Built for Mississauga, Canada customers who want confidence before they book.</p>
+        <p class="hero-copy">Customers searching for comfort service want to know who can respond, what they handle, and how quickly they can book. This landing page keeps the phone path visible while adding a more professional quote flow.</p>
         <div class="actions">
           <a class="primary" href="#contact">Book service</a>
           <a class="secondary" href="#services">View services</a>
@@ -150,17 +168,30 @@
       <div class="stat"><strong>Easy</strong>Call, text, or quote request</div>
     </section>
     <section id="services" class="band">
+      <div class="section-kicker">Services</div>
       <h2 class="section-title">A cleaner path from search to booked work.</h2>
+      <p class="section-intro">The page gives service calls, installations, and maintenance plans their own clear value so the business can capture urgent work and longer-term opportunities.</p>
       <div class="cards">
-        <div class="card"><b>Emergency service</b>Prominent call and intake paths for customers who need help quickly.</div>
-        <div class="card"><b>Installations</b>Clean service pages for systems, upgrades, and project requests.</div>
-        <div class="card"><b>Maintenance plans</b>A recurring revenue path with clearer homeowner value and reminders.</div>
+        <div class="card"><b>Emergency service</b><p>Prominent call and intake paths for customers who need help quickly.</p><ul><li>Urgency-first CTA</li><li>After-hours intake</li><li>Issue details captured</li></ul></div>
+        <div class="card"><b>Installations</b><p>Clean service sections for systems, upgrades, and project requests.</p><ul><li>System replacement copy</li><li>Brand/proof area</li><li>Estimate request flow</li></ul></div>
+        <div class="card"><b>Maintenance plans</b><p>A recurring revenue path with clearer homeowner value and reminders.</p><ul><li>Plan benefits</li><li>Seasonal reminders</li><li>Easy sign-up CTA</li></ul></div>
       </div>
     </section>
     <section class="visual-strip" aria-label="Project gallery preview">
-      <div class="visual one"></div>
-      <div class="visual two"></div>
-      <div class="visual three"></div>
+      <div class="visual one"><span>Fast service intake</span></div>
+      <div class="visual two"><span>Mechanical trust cues</span></div>
+      <div class="visual three"><span>Clean booking path</span></div>
+    </section>
+    <section class="band">
+      <div class="section-kicker">How it works</div>
+      <h2 class="section-title">Less phone tag, more booked service calls.</h2>
+      <p class="section-intro">A better landing page should triage customer needs quickly and capture enough detail for a useful follow-up.</p>
+      <div class="process">
+        <div class="step"><span>1</span><b>Choose issue</b><p>The customer identifies repair, installation, maintenance, or emergency need.</p></div>
+        <div class="step"><span>2</span><b>Share details</b><p>The form collects system type, timing, contact details, and preferred callback.</p></div>
+        <div class="step"><span>3</span><b>Confirm service</b><p>The team follows up with next steps and expected availability.</p></div>
+        <div class="step"><span>4</span><b>Stay connected</b><p>Maintenance and future service options are introduced without cluttering the first request.</p></div>
+      </div>
     </section>
     <section id="proof">
       <div class="split">
@@ -172,9 +203,36 @@
         </div>
       </div>
     </section>
+    <section class="band">
+      <div class="split">
+        <div>
+          <div class="section-kicker">Trust</div>
+          <h2 class="section-title">Trust signals for urgent service decisions.</h2>
+          <p class="section-intro">The layout creates space for emergency availability, licensed technician messaging, system brands, reviews, and maintenance plan value.</p>
+        </div>
+        <div class="testimonial">
+          <p>The strongest HVAC and plumbing landing pages make customers feel handled immediately: clear services, visible phone access, and no confusion about what happens next.</p>
+          <b>Landing page strategy note</b>
+        </div>
+      </div>
+    </section>
+    <section>
+      <div class="section-kicker">Questions</div>
+      <h2 class="section-title">Answers before the first call.</h2>
+      <div class="faq">
+        <div class="faq-item"><b>Can customers call right away?</b><p>Yes. The call button stays visible while the quote form captures non-urgent requests.</p></div>
+        <div class="faq-item"><b>Does this support after-hours leads?</b><p>The concept includes an intake path that can route after-hours questions into email or AI-assisted follow-up.</p></div>
+        <div class="faq-item"><b>Can maintenance plans be promoted?</b><p>Yes. The page includes recurring service positioning without distracting from emergency bookings.</p></div>
+        <div class="faq-item"><b>Is this a full site?</b><p>This is a focused landing page concept that can become part of a full website build.</p></div>
+      </div>
+    </section>
     <section class="final">
       <h2 class="section-title">Ready for customers who are comparing options today.</h2>
-      <p class="lead">This concept uses a stronger visual first impression, faster quote flow, and clearer trust cues without making the site feel overbuilt.</p>
+      <p class="lead">This landing page concept uses stronger copy, premium visuals, faster quote flow, and clearer trust cues without making the site feel overbuilt.</p>
+      <div class="actions">
+        <a class="primary" href="#contact">Book service</a>
+        <a class="secondary" href="tel:4168224544">Call (416) 822-4544</a>
+      </div>
     </section>
     <footer>Concept preview prepared by Vik&#039;s AI Consulting. Not affiliated with Pure Air HVAC.</footer>
   </main>
