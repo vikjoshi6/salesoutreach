@@ -1,0 +1,30 @@
+{
+  "name": "local-home-services-prospecting",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "leads:discover": "tsx src/cli.ts leads:discover",
+    "leads:enrich": "tsx src/cli.ts leads:enrich",
+    "leads:score": "tsx src/cli.ts leads:score",
+    "outreach:prepare": "tsx src/cli.ts outreach:prepare",
+    "reports:daily": "tsx src/cli.ts reports:daily",
+    "workflow:daily": "tsx src/cli.ts workflow:daily",
+    "workflow:weekly": "tsx src/cli.ts workflow:weekly",
+    "build:site": "tsx src/build-site.ts",
+    "build": "npm run build:site",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.4",
+    "dotenv": "^16.5.0",
+    "zod": "^3.24.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.1"
+  }
+}
