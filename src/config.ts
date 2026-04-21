@@ -14,8 +14,14 @@ const envSchema = z.object({
   ENABLE_GOOGLE_PLACES_DISCOVERY: z.coerce.boolean().default(false),
   MOCKUP_BASE_URL: z.string().default("http://localhost:3000"),
   GOOGLE_SHEET_URL: z.string().url().optional().or(z.literal("")).default(""),
+  OBSIDIAN_VAULT_PATH: z.string().default("C:\\Users\\Owner\\Documents\\Codexobsidian\\Codexbot"),
+  OBSIDIAN_ENABLED: z.coerce.boolean().default(false),
   DAILY_DISCOVERY_LIMIT: z.coerce.number().int().positive().default(12),
   DAILY_DRAFT_LIMIT: z.coerce.number().int().positive().default(5),
+  AUTO_TUNE_DISCOVERY_MIN: z.coerce.number().int().positive().default(10),
+  AUTO_TUNE_DISCOVERY_MAX: z.coerce.number().int().positive().default(100),
+  AUTO_TUNE_DRAFT_MIN: z.coerce.number().int().positive().default(3),
+  AUTO_TUNE_DRAFT_MAX: z.coerce.number().int().positive().default(30),
   DRY_RUN: z.coerce.boolean().default(true)
 });
 

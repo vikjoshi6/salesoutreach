@@ -5,6 +5,8 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { loadConfig } from "../src/config.js";
 import { discoverLeads } from "../src/discovery.js";
 import { buildEnrichment } from "../src/enrichment.js";
+import { defaultLearningState, deriveLearningUpdate, saveLearningState } from "../src/learning-state.js";
+import { syncObsidianMemory } from "../src/obsidian.js";
 import { prepareOutreach } from "../src/outreach.js";
 import { writeDailyReport } from "../src/reports.js";
 import { scoreEnrichment } from "../src/scoring.js";
@@ -36,7 +38,13 @@ function configured() {
     PHYSICAL_MAILING_ADDRESS: "123 Main St, Test Metro",
     MOCKUP_BASE_URL: "https://mockups.example.com",
     ENABLE_GOOGLE_PLACES_DISCOVERY: false,
-    GOOGLE_PLACES_API_KEY: ""
+    GOOGLE_PLACES_API_KEY: "",
+    OBSIDIAN_ENABLED: true,
+    OBSIDIAN_VAULT_PATH: path.join(tmp, "Codexbot"),
+    AUTO_TUNE_DISCOVERY_MIN: 8,
+    AUTO_TUNE_DISCOVERY_MAX: 14,
+    AUTO_TUNE_DRAFT_MIN: 3,
+    AUTO_TUNE_DRAFT_MAX: 8
   });
 }
 
@@ -160,5 +168,52 @@ describe("prospecting workflow", () => {
   it("enrichment marks sample test domains as not modern to drive review", async () => {
     const enrichment = await buildEnrichment(lead({ website: "https://sample.test" }));
     expect(enrichment.websiteLooksModern).toBe(false);
+  });
+
+  it("writes structured Obsidian notes for companies, patterns, and runs", async () => {
+    const vault = path.join(tmp, "Codexbot");
+    await import("../src/utils.js").then(({ ensureDir }) => ensureDir(path.join(vault, ".obsidian")));
+    await writeFile(path.join(vault, ".obsidian", "workspace.json"), "{}", "utf8");
+    const data = snapshot();
+    data.leads.push(lead({ state: "draft_ready" }));
+    data.enrichments.push({
+      leadId: data.leads[0].id,
+      hasWebsite: true,
+      hasContactEmail: true,
+      hasPhone: true,
+      hasBookingSignal: false,
+      hasSocialSignal: false,
+      hasAiChatSignal: false,
+      websiteLooksModern: false,
+      notes: ["No social profile signal found."]
+    });
+    data.scores.push({ leadId: data.leads[0].id, score: 55, reasons: ["Website may need a modernization review."], qualified: true, createdAt: nowIso() });
+    const state = deriveLearningUpdate(data, defaultLearningState(configured()), "daily_run");
+    await saveLearningState(configured(), state);
+    const result = await syncObsidianMemory(data, configured(), state, "daily", { ok: true });
+    expect(result.companyNotes).toBe(1);
+    const companyNote = await readFile(path.join(vault, "Memory", "Companies", "test-roofing.md"), "utf8");
+    expect(companyNote).toContain('lead_id:');
+    expect(companyNote).toContain("# Test Roofing");
+  });
+
+  it("keeps cadence learning within configured bounds", () => {
+    const data = snapshot();
+    for (let index = 0; index < 10; index += 1) {
+      const record = lead({ id: id(), normalizedKey: `domain:test-${index}.example` });
+      data.leads.push(record);
+      data.scores.push({ leadId: record.id, score: 70, reasons: ["Website may need a modernization review."], qualified: true, createdAt: nowIso() });
+      data.approvals.push({ leadId: record.id, approval: "approved", createdAt: nowIso() });
+    }
+    const updated = deriveLearningUpdate(data, defaultLearningState(configured()), "manual_feedback");
+    expect(updated.cadence.discoveryLimit).toBeGreaterThanOrEqual(configured().AUTO_TUNE_DISCOVERY_MIN);
+    expect(updated.cadence.discoveryLimit).toBeLessThanOrEqual(configured().AUTO_TUNE_DISCOVERY_MAX);
+    expect(updated.cadence.draftLimit).toBeGreaterThanOrEqual(configured().AUTO_TUNE_DRAFT_MIN);
+    expect(updated.cadence.draftLimit).toBeLessThanOrEqual(configured().AUTO_TUNE_DRAFT_MAX);
+  });
+
+  it("fails clearly when obsidian is enabled and the vault is missing", async () => {
+    const data = snapshot();
+    await expect(syncObsidianMemory(data, configured(), defaultLearningState(configured()), "daily", {})).rejects.toThrow("Obsidian vault is not ready");
   });
 });

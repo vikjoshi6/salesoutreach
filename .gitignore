@@ -1,5 +1,6 @@
 node_modules/
 .env
 data/local-crm.json
+data/learning-state.json
 outputs/
 *.log

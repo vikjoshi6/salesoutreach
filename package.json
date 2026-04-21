@@ -9,6 +9,7 @@
     "leads:score": "tsx src/cli.ts leads:score",
     "outreach:prepare": "tsx src/cli.ts outreach:prepare",
     "reports:daily": "tsx src/cli.ts reports:daily",
+    "feedback:ingest": "tsx src/cli.ts feedback:ingest",
     "workflow:daily": "tsx src/cli.ts workflow:daily",
     "workflow:weekly": "tsx src/cli.ts workflow:weekly",
     "build:site": "tsx src/build-site.ts",

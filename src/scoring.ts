@@ -1,44 +1,54 @@
-import type { CrmSnapshot, Enrichment, LeadScore } from "./types.js";
+import type { CrmSnapshot, Enrichment, LeadScore, LearningState } from "./types.js";
 import { nowIso } from "./utils.js";
 
-export function scoreEnrichment(enrichment: Enrichment): Pick<LeadScore, "score" | "reasons" | "qualified"> {
+export function scoreEnrichment(enrichment: Enrichment, learningState?: LearningState): Pick<LeadScore, "score" | "reasons" | "qualified"> {
+  const weights = learningState?.scoringWeights ?? {
+    missingWebsite: 25,
+    outdatedWebsite: 15,
+    noBooking: 15,
+    noSocial: 10,
+    noAi: 10,
+    noEmailPenalty: 15,
+    noPhonePenalty: 5,
+    qualificationThreshold: 45
+  };
   let score = 35;
   const reasons: string[] = [];
 
   if (!enrichment.hasWebsite) {
-    score += 25;
+    score += weights.missingWebsite;
     reasons.push("No website captured.");
   } else if (!enrichment.websiteLooksModern) {
-    score += 15;
+    score += weights.outdatedWebsite;
     reasons.push("Website may need a modernization review.");
   }
 
   if (!enrichment.hasBookingSignal) {
-    score += 15;
+    score += weights.noBooking;
     reasons.push("No clear booking, quote, or estimate path.");
   }
   if (!enrichment.hasSocialSignal) {
-    score += 10;
+    score += weights.noSocial;
     reasons.push("Weak or missing social media signal.");
   }
   if (!enrichment.hasAiChatSignal) {
-    score += 10;
+    score += weights.noAi;
     reasons.push("No visible AI/chat intake signal.");
   }
   if (!enrichment.hasContactEmail) {
-    score -= 15;
+    score -= weights.noEmailPenalty;
     reasons.push("No email captured; needs manual contact research.");
   }
   if (!enrichment.hasPhone) {
-    score -= 5;
+    score -= weights.noPhonePenalty;
     reasons.push("No phone captured.");
   }
 
   const bounded = Math.max(0, Math.min(100, score));
-  return { score: bounded, reasons, qualified: bounded >= 45 && enrichment.hasContactEmail && reasons.length > 0 };
+  return { score: bounded, reasons, qualified: bounded >= weights.qualificationThreshold && enrichment.hasContactEmail && reasons.length > 0 };
 }
 
-export function scoreLeads(snapshot: CrmSnapshot): { scored: number; qualified: number; review: number; rejected: number } {
+export function scoreLeads(snapshot: CrmSnapshot, learningState?: LearningState): { scored: number; qualified: number; review: number; rejected: number } {
   let scored = 0;
   let qualified = 0;
   let review = 0;
@@ -47,7 +57,7 @@ export function scoreLeads(snapshot: CrmSnapshot): { scored: number; qualified: 
   for (const lead of snapshot.leads.filter((item) => item.state === "enriched" || item.state === "scored" || item.state === "draft_ready")) {
     const enrichment = snapshot.enrichments.find((item) => item.leadId === lead.id);
     if (!enrichment) continue;
-    const result = scoreEnrichment(enrichment);
+    const result = scoreEnrichment(enrichment, learningState);
     snapshot.scores = snapshot.scores.filter((item) => item.leadId !== lead.id);
     snapshot.audits = snapshot.audits.filter((item) => item.leadId !== lead.id);
     snapshot.mockups = snapshot.mockups.filter((item) => item.leadId !== lead.id);
@@ -62,7 +72,7 @@ export function scoreLeads(snapshot: CrmSnapshot): { scored: number; qualified: 
     lead.updatedAt = nowIso();
     scored += 1;
     if (result.qualified) qualified += 1;
-    else if (result.score >= 45) review += 1;
+    else if (result.score >= (learningState?.scoringWeights.qualificationThreshold ?? 45)) review += 1;
     else rejected += 1;
   }
 

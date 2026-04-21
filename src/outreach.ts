@@ -1,12 +1,12 @@
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { AppConfig } from "./config.js";
-import type { Audit, CrmSnapshot, Lead, Mockup, OutreachDraft } from "./types.js";
+import type { Audit, CrmSnapshot, Lead, LearningState, Mockup, OutreachDraft } from "./types.js";
 import { outreachBlockers } from "./compliance.js";
 import { createMockup } from "./mockup.js";
 import { ensureDir, nowIso, slugify } from "./utils.js";
 
-export async function prepareOutreach(snapshot: CrmSnapshot, config: AppConfig): Promise<{ prepared: number; blocked: number }> {
+export async function prepareOutreach(snapshot: CrmSnapshot, config: AppConfig, learningState?: LearningState): Promise<{ prepared: number; blocked: number }> {
   const qualified = snapshot.leads
     .filter((lead) => lead.state === "qualified" || lead.state === "draft_ready")
     .slice(0, config.DAILY_DRAFT_LIMIT);
@@ -23,7 +23,7 @@ export async function prepareOutreach(snapshot: CrmSnapshot, config: AppConfig):
 
     const audit = buildAudit(snapshot, lead);
     const mockup = await createMockup(config, lead, audit);
-    const draft = await createDraft(config, lead, audit, mockup);
+    const draft = await createDraft(config, lead, audit, mockup, learningState);
     snapshot.audits = snapshot.audits.filter((item) => item.leadId !== lead.id);
     snapshot.mockups = snapshot.mockups.filter((item) => item.leadId !== lead.id);
     snapshot.drafts = snapshot.drafts.filter((item) => item.leadId !== lead.id);
@@ -51,16 +51,21 @@ export function buildAudit(snapshot: CrmSnapshot, lead: Lead): Audit {
   return { leadId: lead.id, observations, recommendations, createdAt: nowIso() };
 }
 
-async function createDraft(config: AppConfig, lead: Lead, audit: Audit, mockup: Mockup): Promise<OutreachDraft> {
+async function createDraft(config: AppConfig, lead: Lead, audit: Audit, mockup: Mockup, learningState?: LearningState): Promise<OutreachDraft> {
+  const descriptor = learningState?.copyPlaybook.landingPageDescriptor ?? "landing page mockup";
+  const openingAngle = learningState?.copyPlaybook.openingAngleBySegment[lead.segment] ?? "the first impression and quote flow";
+  const objectionLine =
+    learningState?.copyPlaybook.objectionHandling[0] ??
+    "This is a focused landing page concept, not a full website redesign.";
   const subject = `Quick website idea for ${lead.businessName}`;
   const body = [
     `Hi ${lead.businessName} team,`,
     "",
-    `I was looking at local ${segmentLabel(lead.segment)} companies around ${config.TARGET_METRO} and noticed a practical opportunity to make the first website visit turn into a quote request faster.`,
+    `I was looking at local ${segmentLabel(lead.segment)} companies around ${config.TARGET_METRO} and noticed a practical opportunity around ${openingAngle}.`,
     `The main thing I noticed: ${audit.observations[0]}`,
     "",
-    `I put together a quick landing page mockup here: ${mockup.url}`,
-    `To be clear, this is not meant to be a full website mockup. It is a focused landing page concept to show how the first impression, copy, visuals, and quote flow could feel for your business.`,
+    `I put together a quick ${descriptor} here: ${mockup.url}`,
+    `${objectionLine} It is meant to show how the first impression, copy, visuals, and quote flow could feel for your business.`,
     "",
     `I run ${config.AGENCY_NAME}. I help local service businesses with websites, social content, and practical AI intake workflows, and I have recent local project experience with commercialusedfoodequipment.com, coldstoragedesignsolutions.ca, coldstreamrefrigeration.ca, and similar businesses.`,
     `If this is worth a quick look, reply here and I can send over a tighter version for your business.`,

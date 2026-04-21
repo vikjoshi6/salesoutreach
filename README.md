@@ -24,6 +24,7 @@ npm test
 - `npm run leads:score` ranks leads from 0-100.
 - `npm run outreach:prepare` creates mini-audits, mockup pages, and draft files.
 - `npm run reports:daily` writes the approval queue CSV and Markdown summary.
+- `npm run feedback:ingest` updates learning heuristics and Obsidian memory from current CRM feedback.
 - `npm run workflow:daily` runs the full daily sequence.
 - `npm run workflow:weekly` writes a weekly performance report.
 
@@ -41,6 +42,16 @@ Accepted segments: `roofing`, `hvac_plumbing`, `landscaping`.
 - `outputs/YYYY-MM-DD/google-sheets-crm/*.csv`: Google Sheets-ready CRM table exports.
 - `outputs/YYYY-MM-DD/daily-summary.md`: daily Codex inbox summary.
 - `data/local-crm.json`: local fallback CRM when Supabase credentials are absent.
+- `data/learning-state.json`: bounded heuristics and cadence memory applied on future runs.
+
+## Obsidian Memory
+
+When `OBSIDIAN_ENABLED=true`, the workflow writes structured notes to the configured vault:
+
+- `Memory/Companies/`
+- `Memory/Patterns/`
+- `Memory/Runs/`
+- `Memory/Decisions/`
 
 Live approval sheet created for this workflow:
 

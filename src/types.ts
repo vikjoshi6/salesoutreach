@@ -107,6 +107,57 @@ export type WorkflowRun = {
   errors: string[];
 };
 
+export type LearningPattern = {
+  patternId: string;
+  scope: "segment" | "copy" | "scoring" | "cadence";
+  kind: string;
+  confidence: number;
+  appliesTo: Segment[];
+  evidence: string[];
+  recommendation: string;
+  lastUpdated: string;
+};
+
+export type LearningDecision = {
+  decisionId: string;
+  source: "daily_run" | "manual_feedback" | "weekly_review";
+  summary: string;
+  appliedChanges: string[];
+  createdAt: string;
+};
+
+export type LearningState = {
+  version: number;
+  updatedAt: string;
+  scoringWeights: {
+    missingWebsite: number;
+    outdatedWebsite: number;
+    noBooking: number;
+    noSocial: number;
+    noAi: number;
+    noEmailPenalty: number;
+    noPhonePenalty: number;
+    qualificationThreshold: number;
+  };
+  copyPlaybook: {
+    landingPageDescriptor: string;
+    openingAngleBySegment: Record<Segment, string>;
+    proofPoints: string[];
+    objectionHandling: string[];
+  };
+  cadence: {
+    discoveryLimit: number;
+    draftLimit: number;
+    discoveryMin: number;
+    discoveryMax: number;
+    draftMin: number;
+    draftMax: number;
+  };
+  patterns: LearningPattern[];
+  decisions: LearningDecision[];
+  proposedChanges: string[];
+};
+
 export type CrmSnapshot = {
   leads: Lead[];
   sources: LeadSource[];

@@ -1,4 +1,6 @@
 import { loadConfig } from "./config.js";
+import { deriveLearningUpdate, loadLearningState, saveLearningState } from "./learning-state.js";
+import { syncObsidianMemory } from "./obsidian.js";
 import { createRepository } from "./store.js";
 import { discoverLeads } from "./discovery.js";
 import { enrichLeads } from "./enrichment.js";
@@ -25,9 +27,17 @@ async function main(): Promise<void> {
   let result: unknown;
   if (command === "leads:discover") result = await discoverLeads(snapshot, config);
   else if (command === "leads:enrich") result = await enrichLeads(snapshot);
-  else if (command === "leads:score") result = scoreLeads(snapshot);
-  else if (command === "outreach:prepare") result = await prepareOutreach(snapshot, config);
+  else if (command === "leads:score") result = scoreLeads(snapshot, await loadLearningState(config));
+  else if (command === "outreach:prepare") result = await prepareOutreach(snapshot, config, await loadLearningState(config));
   else if (command === "reports:daily") result = await writeDailyReport(snapshot, config);
+  else if (command === "feedback:ingest") {
+    const state = deriveLearningUpdate(snapshot, await loadLearningState(config), "manual_feedback");
+    await saveLearningState(config, state);
+    result = {
+      learning: state.proposedChanges,
+      memory: await syncObsidianMemory(snapshot, config, state, "feedback", { source: "feedback:ingest" })
+    };
+  }
   else throw new Error(`Unknown command: ${command ?? "(missing)"}`);
   await repo.save(snapshot);
   console.log(JSON.stringify(result, null, 2));
