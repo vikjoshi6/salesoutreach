@@ -1,7 +1,12 @@
-import type { CrmSnapshot, Enrichment, LeadScore, LearningState } from "./types.js";
+import { comparativeScoreDelta } from "./analysis.js";
+import type { ComparativeAnalysis, CrmSnapshot, Enrichment, LeadScore, LearningState } from "./types.js";
 import { nowIso } from "./utils.js";
 
-export function scoreEnrichment(enrichment: Enrichment, learningState?: LearningState): Pick<LeadScore, "score" | "reasons" | "qualified"> {
+export function scoreEnrichment(
+  enrichment: Enrichment,
+  learningState?: LearningState,
+  analysis?: ComparativeAnalysis
+): Pick<LeadScore, "score" | "reasons" | "qualified"> {
   const weights = learningState?.scoringWeights ?? {
     missingWebsite: 25,
     outdatedWebsite: 15,
@@ -44,6 +49,12 @@ export function scoreEnrichment(enrichment: Enrichment, learningState?: Learning
     reasons.push("No phone captured.");
   }
 
+  const comparative = comparativeScoreDelta(analysis);
+  if (comparative.delta > 0) {
+    score += comparative.delta;
+    reasons.push(...comparative.reasons);
+  }
+
   const bounded = Math.max(0, Math.min(100, score));
   return { score: bounded, reasons, qualified: bounded >= weights.qualificationThreshold && enrichment.hasContactEmail && reasons.length > 0 };
 }
@@ -57,7 +68,8 @@ export function scoreLeads(snapshot: CrmSnapshot, learningState?: LearningState)
   for (const lead of snapshot.leads.filter((item) => item.state === "enriched" || item.state === "scored" || item.state === "draft_ready")) {
     const enrichment = snapshot.enrichments.find((item) => item.leadId === lead.id);
     if (!enrichment) continue;
-    const result = scoreEnrichment(enrichment, learningState);
+    const analysis = snapshot.analyses.find((item) => item.leadId === lead.id);
+    const result = scoreEnrichment(enrichment, learningState, analysis);
     snapshot.scores = snapshot.scores.filter((item) => item.leadId !== lead.id);
     snapshot.audits = snapshot.audits.filter((item) => item.leadId !== lead.id);
     snapshot.mockups = snapshot.mockups.filter((item) => item.leadId !== lead.id);

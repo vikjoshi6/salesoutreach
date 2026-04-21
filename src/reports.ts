@@ -14,6 +14,10 @@ const headers = [
   "source",
   "score",
   "score_reasons",
+  "top_comparative_gaps",
+  "competitor_count",
+  "underperformed_competitor_median",
+  "analysis_table_included",
   "qualified",
   "mockup_url",
   "draft_subject",
@@ -66,6 +70,7 @@ function rowForLead(snapshot: CrmSnapshot, config: AppConfig, lead: Lead): Recor
   const mockup = snapshot.mockups.find((item) => item.leadId === lead.id);
   const draft = snapshot.drafts.find((item) => item.leadId === lead.id);
   const approval = snapshot.approvals.find((item) => item.leadId === lead.id);
+  const analysis = snapshot.analyses.find((item) => item.leadId === lead.id);
   const suppressed = lead.contactEmail ? snapshot.suppressions.some((item) => item.email === lead.contactEmail) : false;
   return {
     run_date: config.outputDate,
@@ -77,6 +82,10 @@ function rowForLead(snapshot: CrmSnapshot, config: AppConfig, lead: Lead): Recor
     source: lead.source,
     score: score?.score ?? "",
     score_reasons: score?.reasons.join("; ") ?? "",
+    top_comparative_gaps: analysis?.rankedGaps.slice(0, 3).join("; ") ?? "",
+    competitor_count: analysis?.competitorSet.length ?? 0,
+    underperformed_competitor_median: analysis?.underperformsCompetitorMedian ?? false,
+    analysis_table_included: analysis?.emailTableIncluded ?? false,
     qualified: score?.qualified ?? false,
     mockup_url: mockup?.url ?? "",
     draft_subject: draft?.subject ?? "",
@@ -121,6 +130,34 @@ async function writeCrmTableExports(snapshot: CrmSnapshot, _config: AppConfig, o
     reasons: score.reasons.join("; "),
     created_at: score.createdAt
   })));
+  await writeCsv(
+    path.join(crmDir, "comparative_analyses.csv"),
+    ["lead_id", "summary_findings", "ranked_gaps", "competitor_count", "underperforms_competitor_median", "email_table_included", "degraded_mode", "created_at"],
+    snapshot.analyses.map((analysis) => ({
+      lead_id: analysis.leadId,
+      summary_findings: analysis.summaryFindings.join("; "),
+      ranked_gaps: analysis.rankedGaps.join("; "),
+      competitor_count: analysis.competitorSet.length,
+      underperforms_competitor_median: analysis.underperformsCompetitorMedian,
+      email_table_included: analysis.emailTableIncluded,
+      degraded_mode: analysis.degradedMode ?? "",
+      created_at: analysis.createdAt
+    }))
+  );
+  await writeCsv(
+    path.join(crmDir, "competitor_snapshots.csv"),
+    ["id", "lead_id", "business_name", "website", "source", "rubric", "notes", "created_at"],
+    snapshot.competitors.map((competitor) => ({
+      id: competitor.id,
+      lead_id: competitor.leadId,
+      business_name: competitor.businessName,
+      website: competitor.website,
+      source: competitor.source,
+      rubric: JSON.stringify(competitor.rubric),
+      notes: competitor.notes.join("; "),
+      created_at: competitor.createdAt
+    }))
+  );
   await writeCsv(path.join(crmDir, "audits.csv"), ["lead_id", "observations", "recommendations", "created_at"], snapshot.audits.map((audit) => ({
     lead_id: audit.leadId,
     observations: audit.observations.join("; "),
@@ -173,6 +210,7 @@ function renderDailySummary(snapshot: CrmSnapshot, csvPath: string, crmExportDir
   const drafted = snapshot.leads.filter((lead) => lead.state === "draft_ready").length;
   const qualified = snapshot.scores.filter((score) => score.qualified).length;
   const review = snapshot.scores.filter((score) => score.score >= 50 && score.score < 75).length;
+  const analyses = snapshot.analyses.length;
   const errors = snapshot.runs.at(-1)?.errors ?? [];
   return [
     "# Daily Prospecting Summary",
@@ -181,6 +219,7 @@ function renderDailySummary(snapshot: CrmSnapshot, csvPath: string, crmExportDir
     `Qualified: ${qualified}`,
     `Manual review: ${review}`,
     `Drafts ready: ${drafted}`,
+    `Comparative analyses: ${analyses}`,
     "",
     `Review CSV: ${csvPath}`,
     `Google Sheets CRM exports: ${crmExportDir}`,

@@ -67,6 +67,7 @@ async function ensureStructure(vaultPath: string): Promise<Record<string, string
 async function writeCompanyNote(baseDir: string, snapshot: CrmSnapshot, lead: Lead): Promise<void> {
   const score = snapshot.scores.find((item) => item.leadId === lead.id);
   const enrichment = snapshot.enrichments.find((item) => item.leadId === lead.id);
+  const analysis = snapshot.analyses.find((item) => item.leadId === lead.id);
   const audit = snapshot.audits.find((item) => item.leadId === lead.id);
   const mockup = snapshot.mockups.find((item) => item.leadId === lead.id);
   const approval = snapshot.approvals.find((item) => item.leadId === lead.id);
@@ -96,6 +97,11 @@ async function writeCompanyNote(baseDir: string, snapshot: CrmSnapshot, lead: Le
     `- Score: ${score?.score ?? "n/a"}`,
     `- Qualified: ${score?.qualified ? "yes" : "no"}`,
     ...((score?.reasons.length ? score.reasons : ["No scoring reasons yet."]).map((reason) => `- ${reason}`)),
+    "",
+    "## Comparative Analysis",
+    `- Competitors scanned: ${analysis?.competitorSet.length ?? 0}`,
+    `- Under competitor median: ${analysis?.underperformsCompetitorMedian ? "yes" : "no"}`,
+    ...((analysis?.rankedGaps.length ? analysis.rankedGaps.slice(0, 4) : ["No comparative analysis yet."]).map((item) => `- ${item}`)),
     "",
     "## Mockup Notes",
     `- Mockup URL: ${mockup?.url ?? "None yet"}`,
@@ -160,6 +166,7 @@ async function writeRunNote(
     `- Qualified: ${snapshot.scores.filter((item) => item.qualified).length}`,
     `- Drafts: ${snapshot.drafts.length}`,
     `- Replies: ${snapshot.leads.filter((lead) => lead.state === "replied").length}`,
+    `- Comparative analyses: ${snapshot.analyses.length}`,
     "",
     "## Strongest Patterns",
     ...((learningState.patterns.length ? learningState.patterns.slice(0, 5).map((pattern) => `- ${pattern.kind}: ${pattern.recommendation}`) : ["- None"])),

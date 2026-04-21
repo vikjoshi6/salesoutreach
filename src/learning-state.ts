@@ -73,6 +73,7 @@ export function deriveLearningUpdate(snapshot: CrmSnapshot, state: LearningState
   const next = cloneState(state);
   const changes: string[] = [];
   const reasonCounts = countReasons(snapshot);
+  const gapCounts = countComparativeGaps(snapshot);
   const approvals = snapshot.approvals.filter((item) => item.approval === "approved");
   const rejections = snapshot.approvals.filter((item) => item.approval === "rejected");
   const suppressions = snapshot.suppressions.length;
@@ -121,7 +122,7 @@ export function deriveLearningUpdate(snapshot: CrmSnapshot, state: LearningState
     if (opening) next.copyPlaybook.openingAngleBySegment[segment] = opening;
   }
 
-  next.patterns = buildPatterns(snapshot, next, reasonCounts);
+  next.patterns = buildPatterns(snapshot, next, reasonCounts, gapCounts);
   next.proposedChanges = changes;
   next.updatedAt = nowIso();
   next.decisions = [
@@ -137,7 +138,12 @@ export function deriveLearningUpdate(snapshot: CrmSnapshot, state: LearningState
   return next;
 }
 
-function buildPatterns(snapshot: CrmSnapshot, state: LearningState, reasonCounts: Map<string, number>): LearningPattern[] {
+function buildPatterns(
+  snapshot: CrmSnapshot,
+  state: LearningState,
+  reasonCounts: Map<string, number>,
+  gapCounts: Map<string, number>
+): LearningPattern[] {
   const patterns: LearningPattern[] = [];
   for (const [reason, count] of reasonCounts.entries()) {
     if (count < 2) continue;
@@ -149,6 +155,19 @@ function buildPatterns(snapshot: CrmSnapshot, state: LearningState, reasonCounts
       appliesTo: affectedSegments(snapshot, reason),
       evidence: [`Observed ${count} times in current lead scoring.`],
       recommendation: buildRecommendation(reason, state),
+      lastUpdated: state.updatedAt
+    });
+  }
+  for (const [gap, count] of gapCounts.entries()) {
+    if (count < 2) continue;
+    patterns.push({
+      patternId: slug(gap),
+      scope: "copy",
+      kind: gap,
+      confidence: Math.min(0.95, 0.4 + count * 0.08),
+      appliesTo: affectedSegmentsForGap(snapshot, gap),
+      evidence: [`Observed ${count} times in comparative scans.`],
+      recommendation: comparativeRecommendation(gap),
       lastUpdated: state.updatedAt
     });
   }
@@ -211,6 +230,33 @@ function countReasons(snapshot: CrmSnapshot): Map<string, number> {
     for (const reason of score.reasons) counts.set(reason, (counts.get(reason) ?? 0) + 1);
   }
   return counts;
+}
+
+function countComparativeGaps(snapshot: CrmSnapshot): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const analysis of snapshot.analyses) {
+    for (const gap of analysis.rankedGaps) counts.set(gap, (counts.get(gap) ?? 0) + 1);
+  }
+  return counts;
+}
+
+function affectedSegmentsForGap(snapshot: CrmSnapshot, gap: string): Segment[] {
+  const result = new Set<Segment>();
+  for (const analysis of snapshot.analyses) {
+    if (!analysis.rankedGaps.includes(gap)) continue;
+    const lead = snapshot.leads.find((item) => item.id === analysis.leadId);
+    if (lead) result.add(lead.segment);
+  }
+  return result.size > 0 ? [...result] : [...segments];
+}
+
+function comparativeRecommendation(gap: string): string {
+  const normalized = gap.toLowerCase();
+  if (normalized.includes("trust proof")) return "Raise project proof, review proof, and warranty/licensing trust blocks in both email and landing page copy.";
+  if (normalized.includes("quote/contact")) return "Lead with a stronger CTA and make quote access visible from the first screen onward.";
+  if (normalized.includes("first-screen clarity")) return "Clarify the value proposition in the hero so visitors immediately understand the service and next step.";
+  if (normalized.includes("local relevance")) return "Increase local area language and local proof so the page feels anchored to the market.";
+  return "Keep the landing-page pitch aligned to the strongest repeated comparative gap.";
 }
 
 function cloneState(state: LearningState): LearningState {

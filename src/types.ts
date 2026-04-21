@@ -60,6 +60,59 @@ export type LeadScore = {
   createdAt: string;
 };
 
+export const rubricCategories = [
+  "first_screen_clarity",
+  "quote_accessibility",
+  "trust_proof",
+  "service_clarity",
+  "local_relevance",
+  "modern_ux",
+  "technical_hygiene",
+  "ai_intake"
+] as const;
+export type RubricCategory = (typeof rubricCategories)[number];
+
+export type SiteRubricScore = {
+  category: RubricCategory;
+  label: string;
+  score: number;
+  benchmarkTarget: number;
+  evidence: string[];
+};
+
+export type CompetitorSnapshot = {
+  id: string;
+  leadId: string;
+  businessName: string;
+  website: string;
+  source: string;
+  rubric: SiteRubricScore[];
+  notes: string[];
+  createdAt: string;
+};
+
+export type BenchmarkScore = {
+  category: RubricCategory;
+  label: string;
+  prospectScore: number;
+  competitorMedianScore?: number;
+  competitorTopScore?: number;
+  benchmarkTarget: number;
+  evidence: string[];
+};
+
+export type ComparativeAnalysis = {
+  leadId: string;
+  summaryFindings: string[];
+  rankedGaps: string[];
+  competitorSet: Array<{ businessName: string; website: string; source: string }>;
+  benchmarkRows: BenchmarkScore[];
+  underperformsCompetitorMedian: boolean;
+  emailTableIncluded: boolean;
+  degradedMode?: string;
+  createdAt: string;
+};
+
 export type Audit = {
   leadId: string;
   observations: string[];
@@ -162,6 +215,8 @@ export type CrmSnapshot = {
   leads: Lead[];
   sources: LeadSource[];
   enrichments: Enrichment[];
+  competitors: CompetitorSnapshot[];
+  analyses: ComparativeAnalysis[];
   scores: LeadScore[];
   audits: Audit[];
   mockups: Mockup[];

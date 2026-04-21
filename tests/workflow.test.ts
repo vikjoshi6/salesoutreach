@@ -1,7 +1,8 @@
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { scanComparativeAnalysis } from "../src/analysis.js";
 import { loadConfig } from "../src/config.js";
 import { discoverLeads } from "../src/discovery.js";
 import { buildEnrichment } from "../src/enrichment.js";
@@ -10,7 +11,7 @@ import { syncObsidianMemory } from "../src/obsidian.js";
 import { prepareOutreach } from "../src/outreach.js";
 import { writeDailyReport } from "../src/reports.js";
 import { scoreEnrichment } from "../src/scoring.js";
-import type { CrmSnapshot, Lead } from "../src/types.js";
+import type { ComparativeAnalysis, CrmSnapshot, Lead } from "../src/types.js";
 import { id, nowIso } from "../src/utils.js";
 
 let tmp: string;
@@ -24,10 +25,10 @@ afterEach(async () => {
 });
 
 function snapshot(): CrmSnapshot {
-  return { leads: [], sources: [], enrichments: [], scores: [], audits: [], mockups: [], drafts: [], approvals: [], suppressions: [], runs: [] };
+  return { leads: [], sources: [], enrichments: [], competitors: [], analyses: [], scores: [], audits: [], mockups: [], drafts: [], approvals: [], suppressions: [], runs: [] };
 }
 
-function configured() {
+function configured(overrides: Partial<ReturnType<typeof loadConfig>> = {}) {
   return loadConfig({
     rootDir: tmp,
     outputDate: "2026-04-20",
@@ -41,10 +42,16 @@ function configured() {
     GOOGLE_PLACES_API_KEY: "",
     OBSIDIAN_ENABLED: true,
     OBSIDIAN_VAULT_PATH: path.join(tmp, "Codexbot"),
+    COMPETITOR_COUNT: 3,
+    COMPETITOR_SCAN_ENABLED: true,
+    ANALYSIS_PAGE_LIMIT_PER_SITE: 3,
+    ANALYSIS_FETCH_TIMEOUT_MS: 200,
+    ANALYSIS_EMAIL_TABLE_ROWS: 5,
     AUTO_TUNE_DISCOVERY_MIN: 8,
     AUTO_TUNE_DISCOVERY_MAX: 14,
     AUTO_TUNE_DRAFT_MIN: 3,
-    AUTO_TUNE_DRAFT_MAX: 8
+    AUTO_TUNE_DRAFT_MAX: 8,
+    ...overrides
   });
 }
 
@@ -68,6 +75,39 @@ function lead(overrides: Partial<Lead> = {}): Lead {
 }
 
 describe("prospecting workflow", () => {
+  it("excludes the prospect domain and generates a bounded comparative analysis", async () => {
+    const data = snapshot();
+    data.leads.push(lead({ state: "enriched", website: "https://prospect.example" }));
+    const fetchMock = vi.fn(async (input: string | URL) => {
+      const url = String(input);
+      if (url.includes("places.googleapis.com")) {
+        return {
+          ok: true,
+          json: async () => ({
+            places: [
+              { displayName: { text: "Prospect Self" }, websiteUri: "https://prospect.example" },
+              { displayName: { text: "Competitor One" }, websiteUri: "https://comp-one.example" },
+              { displayName: { text: "Competitor Two" }, websiteUri: "https://comp-two.example" },
+              { displayName: { text: "Competitor Three" }, websiteUri: "https://comp-three.example" }
+            ]
+          })
+        };
+      }
+      return {
+        ok: true,
+        headers: { get: () => "text/html" },
+        text: async () => '<html><head><meta name="viewport"></head><body>Roofing services contact us Mississauga form quote</body></html>'
+      };
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const result = await scanComparativeAnalysis(data, configured({ ENABLE_GOOGLE_PLACES_DISCOVERY: true, GOOGLE_PLACES_API_KEY: "key" }));
+    vi.unstubAllGlobals();
+    expect(result.analyzed).toBe(1);
+    expect(data.competitors).toHaveLength(3);
+    expect(data.competitors.every((item) => !item.website.includes("prospect.example"))).toBe(true);
+    expect(data.analyses[0].benchmarkRows.length).toBeGreaterThan(0);
+  });
+
   it("deduplicates discovered businesses by normalized domain", async () => {
     await writeFile(
       path.join(tmp, "data", "input", "leads.csv"),
@@ -114,6 +154,38 @@ describe("prospecting workflow", () => {
     expect(weak.qualified).toBe(true);
   });
 
+  it("adds comparative weakness to scoring without replacing core heuristics", () => {
+    const analysis: ComparativeAnalysis = {
+      leadId: "1",
+      summaryFindings: [],
+      rankedGaps: [
+        "Trust proof is behind both competitor median and benchmark.",
+        "Quote/contact accessibility is behind competitor median."
+      ],
+      competitorSet: [{ businessName: "Comp", website: "https://comp.example", source: "test" }],
+      benchmarkRows: [
+        { category: "trust_proof", label: "Trust proof", prospectScore: 1, competitorMedianScore: 4, competitorTopScore: 5, benchmarkTarget: 4, evidence: [] },
+        { category: "quote_accessibility", label: "Quote/contact accessibility", prospectScore: 2, competitorMedianScore: 4, competitorTopScore: 5, benchmarkTarget: 4, evidence: [] }
+      ],
+      underperformsCompetitorMedian: true,
+      emailTableIncluded: true,
+      createdAt: nowIso()
+    };
+    const weak = scoreEnrichment({
+      leadId: "1",
+      hasWebsite: true,
+      hasContactEmail: true,
+      hasPhone: true,
+      hasBookingSignal: false,
+      hasSocialSignal: false,
+      hasAiChatSignal: false,
+      websiteLooksModern: false,
+      notes: []
+    }, undefined, analysis);
+    expect(weak.reasons.some((item) => item.includes("trails competitors"))).toBe(true);
+    expect(weak.score).toBeGreaterThan(70);
+  });
+
   it("blocks outreach when sender identity is incomplete", async () => {
     const data = snapshot();
     data.leads.push(lead());
@@ -136,6 +208,26 @@ describe("prospecting workflow", () => {
   it("creates mockup pages and draft files without attachments", async () => {
     const data = snapshot();
     data.leads.push(lead());
+    data.analyses.push({
+      leadId: data.leads[0].id,
+      summaryFindings: ["Current site gap: Trust proof is behind both competitor median and benchmark."],
+      rankedGaps: [
+        "Trust proof is behind both competitor median and benchmark.",
+        "Quote/contact accessibility is behind competitor median."
+      ],
+      competitorSet: [
+        { businessName: "Comp A", website: "https://a.example", source: "test" },
+        { businessName: "Comp B", website: "https://b.example", source: "test" },
+        { businessName: "Comp C", website: "https://c.example", source: "test" }
+      ],
+      benchmarkRows: [
+        { category: "trust_proof", label: "Trust proof", prospectScore: 1, competitorMedianScore: 4, competitorTopScore: 5, benchmarkTarget: 4, evidence: [] },
+        { category: "quote_accessibility", label: "Quote/contact accessibility", prospectScore: 2, competitorMedianScore: 4, competitorTopScore: 5, benchmarkTarget: 4, evidence: [] }
+      ],
+      underperformsCompetitorMedian: true,
+      emailTableIncluded: true,
+      createdAt: nowIso()
+    });
     data.scores.push({ leadId: data.leads[0].id, score: 90, reasons: ["No clear booking path."], qualified: true, createdAt: nowIso() });
     const result = await prepareOutreach(data, configured());
     expect(result.prepared).toBe(1);
@@ -143,6 +235,8 @@ describe("prospecting workflow", () => {
     const draft = await readFile(data.drafts[0].draftPath, "utf8");
     expect(draft).toContain("Subject: Quick website idea");
     expect(draft).not.toMatch(/attachment/i);
+    expect(draft).toContain("Here is the quick comparison:");
+    expect(draft).toContain("landing page mockup");
   });
 
   it("blocks suppressed recipients", async () => {
@@ -159,10 +253,23 @@ describe("prospecting workflow", () => {
     const data = snapshot();
     data.leads.push(lead({ state: "draft_ready" }));
     data.scores.push({ leadId: data.leads[0].id, score: 90, reasons: ["No social signal."], qualified: true, createdAt: nowIso() });
+    data.analyses.push({
+      leadId: data.leads[0].id,
+      summaryFindings: ["Gap found"],
+      rankedGaps: ["Trust proof is behind benchmark expectations."],
+      competitorSet: [],
+      benchmarkRows: [],
+      underperformsCompetitorMedian: false,
+      emailTableIncluded: true,
+      degradedMode: "Benchmarks only",
+      createdAt: nowIso()
+    });
     data.runs.push({ id: "run", runType: "daily", status: "running", startedAt: nowIso(), summary: {}, errors: ["Blocked lead: Missing email."] });
     const result = await writeDailyReport(data, configured());
     const summary = await readFile(result.summaryPath, "utf8");
     expect(summary).toContain("Blocked lead");
+    const analysisCsv = await readFile(path.join(result.crmExportDir, "comparative_analyses.csv"), "utf8");
+    expect(analysisCsv).toContain("Trust proof is behind benchmark expectations.");
   });
 
   it("enrichment marks sample test domains as not modern to drive review", async () => {

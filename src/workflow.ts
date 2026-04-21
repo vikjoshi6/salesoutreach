@@ -1,4 +1,5 @@
 import type { AppConfig } from "./config.js";
+import { scanComparativeAnalysis } from "./analysis.js";
 import { applyLearningConfig, deriveLearningUpdate, loadLearningState, saveLearningState } from "./learning-state.js";
 import { syncObsidianMemory } from "./obsidian.js";
 import type { Repository } from "./store.js";
@@ -17,6 +18,7 @@ export async function runDailyWorkflow(repo: Repository, config: AppConfig): Pro
     const snapshot = await repo.load();
     const discovery = await discoverLeads(snapshot, effectiveConfig);
     const enrichment = await enrichLeads(snapshot);
+    const analysis = await scanComparativeAnalysis(snapshot, effectiveConfig);
     const scoring = scoreLeads(snapshot, learningState);
     const outreach = await prepareOutreach(snapshot, effectiveConfig, learningState);
     const report = await writeDailyReport(snapshot, effectiveConfig);
@@ -34,7 +36,7 @@ export async function runDailyWorkflow(repo: Repository, config: AppConfig): Pro
     } catch (memoryError) {
       errors.push(`Obsidian memory sync failed: ${memoryError instanceof Error ? memoryError.message : String(memoryError)}`);
     }
-    const summary = { discovery, enrichment, scoring, outreach, report, memory, cadence: nextLearningState.cadence, learning: nextLearningState.proposedChanges };
+    const summary = { discovery, enrichment, analysis, scoring, outreach, report, memory, cadence: nextLearningState.cadence, learning: nextLearningState.proposedChanges };
     await repo.save(snapshot);
     await repo.finishRun(run, "completed", summary, errors);
     return summary;

@@ -6,6 +6,7 @@
   "scripts": {
     "leads:discover": "tsx src/cli.ts leads:discover",
     "leads:enrich": "tsx src/cli.ts leads:enrich",
+    "analysis:scan": "tsx src/cli.ts analysis:scan",
     "leads:score": "tsx src/cli.ts leads:score",
     "outreach:prepare": "tsx src/cli.ts outreach:prepare",
     "reports:daily": "tsx src/cli.ts reports:daily",

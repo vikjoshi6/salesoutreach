@@ -2,7 +2,7 @@
 
 Codex-managed prospecting workflow for a local metro pilot across roofing, HVAC/plumbing, and landscaping.
 
-The v1 workflow is intentionally draft-only for a personal Gmail setup. It researches/imports leads, scores them, prepares mini-audits and hosted mockup pages, writes Gmail-ready draft files, and exports Google Sheets-ready CRM tables. It never sends email.
+The v1 workflow is intentionally draft-only for a personal Gmail setup. It researches/imports leads, runs a bounded competitive analysis scan, scores them, prepares mini-audits and hosted mockup pages, writes Gmail-ready draft files, and exports Google Sheets-ready CRM tables. It never sends email.
 
 ## Quick Start
 
@@ -21,6 +21,7 @@ npm test
 
 - `npm run leads:discover` imports lead candidates and deduplicates them.
 - `npm run leads:enrich` checks websites/contact/social signals.
+- `npm run analysis:scan` compares each prospect against local competitors and fixed digital benchmarks.
 - `npm run leads:score` ranks leads from 0-100.
 - `npm run outreach:prepare` creates mini-audits, mockup pages, and draft files.
 - `npm run reports:daily` writes the approval queue CSV and Markdown summary.
@@ -65,6 +66,7 @@ Current operating storage is local JSON plus Google Sheets exports, with the liv
 
 - No automatic sending.
 - No attachments in outreach drafts.
+- Comparative tables in drafts are evidence-based and limited to visible site signals.
 - Suppressed emails/domains are blocked.
 - Missing sender identity or physical mailing address blocks outreach creation.
 - Google Places discovery uses the official API. Do not scrape Google Maps pages or mass-download Google Maps content into the CRM.

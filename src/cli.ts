@@ -1,4 +1,5 @@
 import { loadConfig } from "./config.js";
+import { scanComparativeAnalysis } from "./analysis.js";
 import { deriveLearningUpdate, loadLearningState, saveLearningState } from "./learning-state.js";
 import { syncObsidianMemory } from "./obsidian.js";
 import { createRepository } from "./store.js";
@@ -27,6 +28,7 @@ async function main(): Promise<void> {
   let result: unknown;
   if (command === "leads:discover") result = await discoverLeads(snapshot, config);
   else if (command === "leads:enrich") result = await enrichLeads(snapshot);
+  else if (command === "analysis:scan") result = await scanComparativeAnalysis(snapshot, config);
   else if (command === "leads:score") result = scoreLeads(snapshot, await loadLearningState(config));
   else if (command === "outreach:prepare") result = await prepareOutreach(snapshot, config, await loadLearningState(config));
   else if (command === "reports:daily") result = await writeDailyReport(snapshot, config);

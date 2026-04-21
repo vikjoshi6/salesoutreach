@@ -3,6 +3,8 @@ import { createClient } from "@supabase/supabase-js";
 import type {
   Approval,
   Audit,
+  ComparativeAnalysis,
+  CompetitorSnapshot,
   CrmSnapshot,
   Enrichment,
   Lead,
@@ -21,6 +23,8 @@ const emptySnapshot = (): CrmSnapshot => ({
   leads: [],
   sources: [],
   enrichments: [],
+  competitors: [],
+  analyses: [],
   scores: [],
   audits: [],
   mockups: [],
@@ -41,7 +45,7 @@ export class LocalJsonRepository implements Repository {
   constructor(private readonly file: string) {}
 
   async load(): Promise<CrmSnapshot> {
-    return readJsonFile(this.file, emptySnapshot());
+    return normalizeSnapshot(await readJsonFile(this.file, emptySnapshot()));
   }
 
   async save(snapshot: CrmSnapshot): Promise<void> {
@@ -76,6 +80,23 @@ export class LocalJsonRepository implements Repository {
   }
 }
 
+function normalizeSnapshot(snapshot: Partial<CrmSnapshot>): CrmSnapshot {
+  return {
+    leads: snapshot.leads ?? [],
+    sources: snapshot.sources ?? [],
+    enrichments: snapshot.enrichments ?? [],
+    competitors: snapshot.competitors ?? [],
+    analyses: snapshot.analyses ?? [],
+    scores: snapshot.scores ?? [],
+    audits: snapshot.audits ?? [],
+    mockups: snapshot.mockups ?? [],
+    drafts: snapshot.drafts ?? [],
+    approvals: snapshot.approvals ?? [],
+    suppressions: snapshot.suppressions ?? [],
+    runs: snapshot.runs ?? []
+  };
+}
+
 export class SupabaseRepository extends LocalJsonRepository {
   private readonly client;
 
@@ -94,6 +115,8 @@ export class SupabaseRepository extends LocalJsonRepository {
   private async syncToSupabase(snapshot: CrmSnapshot): Promise<void> {
     await this.upsert("leads", snapshot.leads.map(toLeadRow), "normalized_key");
     await this.upsert("lead_sources", snapshot.sources.map(toSourceRow), "id");
+    await this.upsert("competitor_snapshots", snapshot.competitors.map(toCompetitorRow), "id");
+    await this.upsert("comparative_analyses", snapshot.analyses.map(toAnalysisRow), "lead_id,created_at");
     await this.upsert("lead_scores", snapshot.scores.map(toScoreRow), "lead_id,created_at");
     await this.upsert("audits", snapshot.audits.map(toAuditRow), "lead_id,created_at");
     await this.upsert("mockups", snapshot.mockups.map(toMockupRow), "lead_id,created_at");
@@ -156,6 +179,33 @@ function toScoreRow(score: LeadScore): Record<string, unknown> {
     reasons: score.reasons,
     qualified: score.qualified,
     created_at: score.createdAt
+  };
+}
+
+function toCompetitorRow(competitor: CompetitorSnapshot): Record<string, unknown> {
+  return {
+    id: competitor.id,
+    lead_id: competitor.leadId,
+    business_name: competitor.businessName,
+    website: competitor.website,
+    source: competitor.source,
+    rubric: competitor.rubric,
+    notes: competitor.notes,
+    created_at: competitor.createdAt
+  };
+}
+
+function toAnalysisRow(analysis: ComparativeAnalysis): Record<string, unknown> {
+  return {
+    lead_id: analysis.leadId,
+    summary_findings: analysis.summaryFindings,
+    ranked_gaps: analysis.rankedGaps,
+    competitor_set: analysis.competitorSet,
+    benchmark_rows: analysis.benchmarkRows,
+    underperforms_competitor_median: analysis.underperformsCompetitorMedian,
+    email_table_included: analysis.emailTableIncluded,
+    degraded_mode: analysis.degradedMode,
+    created_at: analysis.createdAt
   };
 }
 
